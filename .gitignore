@@ -1,0 +1,12 @@
+compiled
+*~
+\#*
+*.bak
+*.dep
+*.zo
+*.js
+*.css
+*.html
+*.sxref
+*.rktd
+
