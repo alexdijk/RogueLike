@@ -18,8 +18,7 @@
     ; basic menu
     (define/override (draw canvas)
       (send canvas clear)
-      (send canvas write-center "Racket Roguelike" 10)
+      (send canvas write-center *game-name* 10)
       (send canvas write-center "Press any key to continue" 12))
 
     (super-new)))
-

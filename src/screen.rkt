@@ -3,7 +3,10 @@
 ;; screen.rkt
 ;;
 (provide
- screen%)
+ screen%
+ *game-name*)
+
+(define *game-name* "Survival Dragon")
 
 (define screen%
   (class object%

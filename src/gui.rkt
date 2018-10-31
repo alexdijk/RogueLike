@@ -19,7 +19,7 @@
     ;; create the frame
     (define frame
       (new frame%
-           (label "Racket Roquelike")
+           (label *game-name*)
            (style '(no-resize-border))))
 
     ;; create the ascii canvas
