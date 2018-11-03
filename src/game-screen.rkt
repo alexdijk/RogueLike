@@ -8,6 +8,7 @@
 
 (require
   racket/draw
+  noise
   "screen.rkt")
 
 (define pt make-rectangular)
@@ -24,23 +25,58 @@
     ;; use an imaginary number for a point
     (define player (pt 0 0))
 
+    (define caves (make-hash))
+    
+    (define (get-tile x y)
+      (unless (hash-has-key? caves (list x y))
+        (hash-set! caves (list x y)
+                   (let ()
+                     (define wall?  (> (simplex (* 0.1 x) (* 0.1 y) 0)         0.0))
+                     (define water? (> (simplex (* 0.1 x) 0         (* 0.1 y)) 0.5))
+                     (define tree?  (> (simplex 0         (* 0.1 x) (* 0.1 y)) 0.5)) 
+                     (cond
+                       (wall? 'wall)
+                       (water? 'water)
+                       (tree? 'tree)
+                       (else 'empty)))))
+      (hash-ref caves (list x y)))
+   
+    ;; process keyboard events 
     (define/override (update key-event)
+      (define target player)
       (case (send key-event get-key-code)
-        ((numpad8 #\w up) (set! player (+ (pt 0 -1) player)))
-        ((numpad4 #\a left) (set! player (+ (pt -1 0) player)))
-        ((numpad6 #\s down) (set! player (+ (pt 0 1) player)))
-        ((numpad2 #\d right) (set! player (+ (pt 1 0) player))))
+        ((numpad8 #\w up)    (set! target (+ (pt  0  1) player)))
+        ((numpad4 #\a left)  (set! target (+ (pt  1  0) player)))
+        ((numpad6 #\s down)  (set! target (+ (pt  0 -1) player)))
+        ((numpad2 #\d right) (set! target (+ (pt -1  0) player))))
 
-      ;; keep this state
+      (when (eq? 'empty (get-tile (pt-x target) (pt-y target)))
+        (set! player target))
+      
+      ;; keep the state
       this)
 
     ;; draw the game itself
     (define/override (draw canvas)
       (send canvas clear)
 
+      (for* ((xi (in-range (send canvas get-width-in-characters)))
+             (yi (in-range (send canvas get-height-in-characters))))
+        (define x/y (recenter canvas (- player (pt xi yi))))
+        (case (get-tile (pt-x x/y) (pt-y x/y))
+          ((wall)  (send canvas write #\# xi yi))
+          ((water) (send canvas write #\space xi yi "blue" "blue"))
+          ((tree)  (send canvas write #\u0005 xi yi "green"))))
+
       ;; draw the player
       ;; 0x0 is the center point of the canvas
-      (let ((player (recenter canvas player)))
-        (send canvas write #\@ (pt-x player) (pt-y player))))
+      (let ((player (recenter canvas (pt 0 0))))
+        (send canvas write #\@ (pt-x player) (pt-y player)))
+      
+      ; Debug: Show the player location
+      (send canvas write-string
+            (format "~a, ~a" (pt-x player) (pt-y player))
+            1 1
+            "green"))
 
     (super-new)))
