@@ -9,10 +9,15 @@
 (require
   racket/draw
   noise
-  "screen.rkt"
-  "thing.rkt"
-  "world.rkt"
-  "point.rkt")
+  "screen.rkt")
+
+(define pt make-rectangular)
+(define pt-x real-part)
+(define pt-y imag-part)
+
+(define (recenter canvas orig)
+  (+ orig (pt (quotient (send canvas get-width-in-characters) 2)
+              (quotient (send canvas get-height-in-characters) 2))))
 
 (define game-screen%
   (class screen%
@@ -39,26 +44,20 @@
     ;; process keyboard events
     (define game-over #f)
     (define/override (update key-event)
-      (cond
-        (game-over (new game-screen%))
-        (else
-         (define target player)
-         (case (send key-event get-key-code)
-           ((numpad8 #\w up)    (set! target (+ (pt  0  1) player)))
-           ((numpad4 #\a left)  (set! target (+ (pt  1  0) player)))
-           ((numpad2 #\s down)  (set! target (+ (pt  0 -1) player)))
-           ((numpad6 #\d right) (set! target (+ (pt -1  0) player))))
+      (define target player)
 
-         (when (eq? 'empty (get-tile (pt-x target) (pt-y target)))
-           (set! player target))
-
-        (when (<= (thing-get player 'health) 0)
-          (send world log "You Lose!!")
-          (send world log "Press any key to continue")
-          (set! game-over #t))
       
-        ;; keep the state
-        this)))
+      (case (send key-event get-key-code)
+        ((numpad8 #\w up)    (set! target (+ (pt  0  1) player)))
+        ((numpad4 #\a left)  (set! target (+ (pt  1  0) player)))
+        ((numpad2 #\s down)  (set! target (+ (pt  0 -1) player)))
+        ((numpad6 #\d right) (set! target (+ (pt -1  0) player))))
+
+      (when (eq? 'empty (get-tile (pt-x target) (pt-y target)))
+        (set! player target))
+      
+      ;; keep the state
+      this)
 
     ;; draw the game itself
     (define/override (draw canvas)
@@ -76,13 +75,6 @@
       ;; 0x0 is the center point of the canvas
       (let ((player (recenter canvas (pt 0 0))))
         (send canvas write #\@ (pt-x player) (pt-y player)))
-
-      (for ((i (in-naturals))
-            (msg (in-list (send world get-log 3))))
-        (send canvas write-string
-              msg
-              1 (- (send canvas get-height-in-characters) i 2)
-              "green"))
       
       ; Debug: Show the player location
       (send canvas write-string
