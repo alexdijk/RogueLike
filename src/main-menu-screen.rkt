@@ -6,6 +6,7 @@
  main-menu-screen%)
 
 (require
+  racket/base
   "screen.rkt"
   "game-screen.rkt")
 

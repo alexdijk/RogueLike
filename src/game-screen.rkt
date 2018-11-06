@@ -69,8 +69,8 @@
         (define x/y (recenter canvas (- player (pt xi yi))))
         (case (get-tile (pt-x x/y) (pt-y x/y))
           ((wall)  (send canvas write #\# xi yi))
-          ((water) (send canvas write #\space xi yi "blue" "blue"))
-          ((tree)  (send canvas write #\u0005 xi yi "green"))))
+          ((water) (send canvas write #\space xi yi "blue"))
+          ((tree)  (send canvas write #\* xi yi "yellow"))))
 
       ;; draw the player
       ;; 0x0 is the center point of the canvas

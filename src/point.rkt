@@ -3,6 +3,8 @@
 ;;
 ;; point.rkt
 ;;
+(require
+  racket/base)
 
 (provide (all-defined-out))
 

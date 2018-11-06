@@ -6,6 +6,9 @@
  screen%
  *game-name*)
 
+(require
+  racket/base)
+
 (define *game-name* "Survival Dragon")
 
 (define screen%
@@ -18,4 +21,3 @@
       (error 'screen% "override this method"))
 
     (super-new)))
-
