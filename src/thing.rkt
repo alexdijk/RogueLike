@@ -18,13 +18,13 @@
     [(_ [(k arg* ...) body* ...] rest ...)
      (let ([thing (make-thing rest ...)])
        (hash-set! (thing-data thing) 'k
-                  (lambda (arg* ...)
+                  (λ (arg* ...)
                     body* ...))
        thing)]
     [(_ base [(k arg* ...) body* ...] rest ...)
      (let ([thing (make-thing base rest ...)])
        (hash-set! (thing-data thing) 'k
-                  (lambda (arg* ...)
+                  (λ (arg* ...)
                     body* ...))
        thing)]    
     ; Add a key/value pair to a thing
@@ -74,7 +74,7 @@
     [(not (thing? thing))
      (error 'thing-call "~a is not a thing" thing)]
     [(thing-get thing key #f)
-     => (lambda (f)
+     => (λ (f)
           (if (procedure? f)
               (apply f args)
               (error 'thing-call "~a is not a procedure in ~a, it is ~a"

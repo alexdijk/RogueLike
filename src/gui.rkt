@@ -5,7 +5,6 @@
 
 (require
   racket/gui
-  racket/draw
   ascii-canvas
   "screen.rkt"
   "main-menu-screen.rkt")
@@ -15,7 +14,8 @@
   (class object%
     (init-field width-in-chars
                 height-in-chars)
-
+    (super-new)
+  
     ;; create the frame
     (define frame
       (new frame%
@@ -28,6 +28,12 @@
              (inherit-field
               width-in-characters
               height-in-characters)
+
+             ;; finish init
+             (super-new
+              (parent frame)
+              (width-in-characters width-in-chars)
+              (height-in-characters height-in-chars))
 
              (define/override (on-char key-event)
                (case (send key-event get-key-code)
@@ -45,17 +51,11 @@
                      (send frame refresh))
                     ;; or exit
                     (else
-                     (exit))))))
-
-             ;; finish init / init the ascii-canvas
-             (super-new
-              (parent frame)
-              (width-in-characters width-in-chars)
-              (height-in-characters height-in-chars)))))
+                     (exit)))))))))
  
     ;; the active screen
     (define active-screen (new main-menu-screen%))
-
+    
     ;; make everything visible
     (send frame show #t)
 

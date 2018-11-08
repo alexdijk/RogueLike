@@ -7,7 +7,6 @@
  game-screen%)
 
 (require
-  racket/draw
   noise
   "screen.rkt"
   "thing.rkt"
@@ -16,25 +15,16 @@
 
 (define game-screen%
   (class screen%
+    (super-new)
+    
+    ;; create a world
+    (define world (new world%))
+    
     ;; store the player's state
     ;; use an imaginary number for a point
-    (define player (pt 0 0))
-
-    (define caves (make-hash))
+    (define player (send world get-player))
     
-    (define (get-tile x y)
-      (unless (hash-has-key? caves (list x y))
-        (hash-set! caves (list x y)
-                   (let ()
-                     (define wall?  (> (simplex (* 0.1 x) (* 0.1 y) 0)         0.0))
-                     (define water? (> (simplex (* 0.1 x) 0         (* 0.1 y)) 0.5))
-                     (define tree?  (> (simplex 0         (* 0.1 x) (* 0.1 y)) 0.5)) 
-                     (cond
-                       (wall? 'wall)
-                       (water? 'water)
-                       (tree? 'tree)
-                       (else 'empty)))))
-      (hash-ref caves (list x y)))
+    (define caves (make-hash))
    
     ;; process keyboard events
     (define game-over #f)
@@ -42,41 +32,53 @@
       (cond
         (game-over (new game-screen%))
         (else
-         (define target player)
+         ;(define target player)
          (case (send key-event get-key-code)
-           ((numpad8 #\w up)    (set! target (+ (pt  0  1) player)))
-           ((numpad4 #\a left)  (set! target (+ (pt  1  0) player)))
-           ((numpad2 #\s down)  (set! target (+ (pt  0 -1) player)))
-           ((numpad6 #\d right) (set! target (+ (pt -1  0) player))))
+           ((numpad8 #\w up)    (send world try-move player (+ (pt  0  1) (thing-get player 'location))))
+           ((numpad4 #\a left)  (send world try-move player (+ (pt  1  0) (thing-get player 'location))))
+           ((numpad2 #\s down)  (send world try-move player (+ (pt  0 -1) (thing-get player 'location))))
+           ((numpad6 #\d right) (send world try-move player (+ (pt -1  0) (thing-get player 'location)))))
 
-         (when (eq? 'empty (get-tile (pt-x target) (pt-y target)))
-           (set! player target))
-
-        (when (<= (thing-get player 'health) 0)
-          (send world log "You Lose!!")
-          (send world log "Press any key to continue")
-          (set! game-over #t))
+         ;         (when (eq? 'empty (get-tile (pt-x target) (pt-y target)))
+         ;           (set! player target))
+         
+         (when (<= (thing-get player 'health) 0)
+           (send world log "You Lose!!")
+           (send world log "Press any key to continue")
+           (set! game-over #t))
       
-        ;; keep the state
-        this)))
+         ;; keep the state
+         this)))
 
     ;; draw the game itself
     (define/override (draw canvas)
       (send canvas clear)
-
+      (define player (send world get-player))
+      
       (for* ((xi (in-range (send canvas get-width-in-characters)))
              (yi (in-range (send canvas get-height-in-characters))))
-        (define x/y (recenter canvas (- player (pt xi yi))))
-        (case (get-tile (pt-x x/y) (pt-y x/y))
-          ((wall)  (send canvas write #\# xi yi))
-          ((water) (send canvas write #\space xi yi "blue"))
-          ((tree)  (send canvas write #\* xi yi "yellow"))))
-
+        (define x/y (recenter canvas (- (thing-get player 'location) (pt xi yi))))
+        (define tile (send world get-tile (pt-x x/y) (pt-y x/y)))
+        (send canvas write
+              (thing-get tile 'character)
+              xi
+              yi
+              (thing-get tile 'color)))
+      
       ;; draw the player
       ;; 0x0 is the center point of the canvas
       (let ((player (recenter canvas (pt 0 0))))
         (send canvas write #\@ (pt-x player) (pt-y player)))
 
+      (send world draw-npcs canvas)
+      
+      (for ((i (in-naturals))
+            (key (in-list '(attack defense health))))
+        (send canvas write-string
+              (format "~a: ~a" key (thing-get player key))
+              1 (+ i 1)
+              "green"))
+      
       (for ((i (in-naturals))
             (msg (in-list (send world get-log 3))))
         (send canvas write-string
@@ -85,9 +87,9 @@
               "green"))
       
       ; Debug: Show the player location
-      (send canvas write-string
-            (format "~a, ~a" (pt-x player) (pt-y player))
-            1 1
-            "green"))
-
-    (super-new)))
+      ;      (send canvas write-string
+      ;            (format "~a, ~a" (pt-x player) (pt-y player))
+      ;            1 1
+      ;            "cyan")
+      
+      )))

@@ -32,8 +32,8 @@
             (pt (- (random 3) 1)
                 (- (random 3) 1))))))
 
-;(define random-enemies
-;  (vector
-;   (make-thing wandering-enemy
-;            (name "rat")
-;            (character #\r))))
+(define random-enemies
+  (vector
+   (make-thing wandering-enemy
+               (name "rat")
+               (character #\r))))
