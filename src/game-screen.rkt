@@ -39,6 +39,8 @@
            ((numpad2 #\s down)  (send world try-move player (+ (pt  0 -1) (thing-get player 'location))))
            ((numpad6 #\d right) (send world try-move player (+ (pt -1  0) (thing-get player 'location)))))
 
+         (send world update-npcs)
+
          ;         (when (eq? 'empty (get-tile (pt-x target) (pt-y target)))
          ;           (set! player target))
          
