@@ -17,7 +17,6 @@
               (quotient (send canvas get-height-in-characters) 2))))
 
 (define (distance p1 p2)
-  (define (sqr n)(* n n))
   (sqrt (+ (sqr (- (pt-x p2) (pt-x p1)))
            (sqr (- (pt-y p2) (pt-y p1))))))
 

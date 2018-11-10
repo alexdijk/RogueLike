@@ -83,7 +83,7 @@
 
         ;; random generate new enemy
         (when (and (thing-get new-tile 'walkable)
-                   (< (random 100) 1))
+                   (< (random 50) 1))
           (define new-thing
             (make-thing
              (vector-ref random-enemies
@@ -124,6 +124,7 @@
     ;; store a list of non-player entities
     (define npcs '())
 
+    ;; update the npcs
     (define/public (update-npcs)
       (for ((npc (in-list npcs)))
         (thing-call npc 'act npc this))
@@ -135,6 +136,7 @@
                (> (thing-get npc 'health) 0))
              npcs)))
 
+    ;; draw npcs on canvas
     (define/public (draw-npcs canvas)
 ;     (if (empty? npcs) (send this log "npcs empty")
 ;          (send this log "npcs not empty"))
@@ -148,4 +150,9 @@
                 (thing-get npc 'character)
                 (pt-x x/y)
                 (pt-y x/y)
-                (thing-get npc 'color)))))))
+                (thing-get npc 'color)))))
+
+    (define/public (get-entities p)
+      (for/list ((entity (cons player npcs))
+                 #:when (= p (thing-get entity 'location)))
+        entity))))
