@@ -8,16 +8,17 @@
 
 (require
   "thing.rkt"
-  "point.rkt")
+  "point.rkt"
+  "items.rkt")
 
 (define-thing entity
   (character #\x)
   (color "white")
-  (location (pt 0 0)))
+  (location (pt 0 0))
+  (inventory '()))
 
 (define-thing enemy entity
   (name "enemy")
-  (color "gray")
   (attack 10)
   (defense 10)
   (health 10)
@@ -36,7 +37,7 @@
    (define distance-to-player
      (distance (thing-get (send world get-player) 'location)
                (thing-get me ' location)))
-   (when (<= distance-to-player 1.5)
+   (when (<= distance-to-player 2.0)
      ; log a message
      (send world log (format "~a explodes violently" (thing-get me 'name)))
 
@@ -83,37 +84,51 @@
       (thing-call wandering-enemy 'act me world)))))
 
 ;; the actual enemies
-(define random-enemies
+;(define random-enemies
+(define *enemies*
   (vector
    (make-thing wandering-enemy
                (name "rat")
+               (color "silver")
                (character #\r))
+   
    (make-thing fleeing-enemy
                (name "cat")
-               (character #\u0003)
+               (character #\c)
                (color "yellow"))
+   
    (make-thing exploding-enemy
                (name "bomb")
                (color "white")
-               (character #\O)
+               (character #\u000f)
                (attack 50))
+
+   (make-thing seeking-enemy
+               (name "teeth")
+               (character #\u00e4)
+               (color "HotPink")
+               (attack 40))
+   
    (make-thing seeking-enemy
                (name "goblin")
                (character #\g)
                (color "orange")
-               (attack 15)
-               (defense 5))
+               (attack 75))
+   
    (make-thing seeking-enemy
-               (name "isis")
-               (character #\i)
+               (name "snake")
+               (character #\s)
                (color "green")
                (attack 25)
                (defense 5)
                ((act me world)
                 (thing-call seeking-enemy 'act me world)
                 (thing-call exploding-enemy 'act me world)))
-   (make-thing seeking-enemy
-               (name "doom")
-               (character #\u0001)
-               (color "red")
-               (attack 75))))
+   
+;   (make-thing seeking-enemy
+;               (name "doom")
+;               (character #\u0001)
+;               (color "red")
+;               (attack 75))
+   ))
+

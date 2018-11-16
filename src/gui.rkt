@@ -4,7 +4,6 @@
 ;;
 
 (require
-  errortrace
   racket/gui
   ascii-canvas
   "screen.rkt"

@@ -11,27 +11,35 @@
   noise
   "thing.rkt"
   "entities.rkt"
-  "point.rkt")
+  "point.rkt"
+  "items.rkt")
+
+(define (vector-choose-random v)
+  (vector-ref v (random (vector-length v))))
+
+(define (vector-choose-biased v)
+  (vector-choose-random v))
 
 (define-thing tile
   (walkable #f)
   (character #\space)
-  (color "black"))
+  (color "black")
+  (items '()))
 
 (define-thing empty tile
   (walkable #t))
 
 (define-thing wall tile
   (character #\#)
-  (color "white"))
+  (color "gainsboro"))
 
 (define-thing water tile
-  (character #\u00db)
-  (color "blue"))
+  (character #\u00b1)
+  (color "cornflowerblue"))
 
 (define-thing tree tile
   (character #\u0005)
-  (color "green"))
+  (color "forestgreen"))
 
 (define world%
   (class object%
@@ -41,9 +49,11 @@
     (define player
       (make-thing entity
                   (name "player")
+                  ;(color "MediumBlue")
                   (attack 10)
                   (defense 10)
                   (health 100)))
+    
     (define/public (get-player) player)
 
     ;; log messages for the player
@@ -75,21 +85,33 @@
             (define water?  (> (simplex (* 0.1 x) 0         (* 0.1 y)) 0.5))
             (define tree?   (> (simplex 0         (* 0.1 x) (* 0.1 y)) 0.5))
             (cond
-              (wall? wall)
-              (water? water)
-              (tree? tree)
-              (else empty))))
+              (wall? (make-thing wall))
+              (water? (make-thing water))
+              (tree? (make-thing tree))
+              (else (make-thing empty)))))
         (hash-set! tiles (list x y) new-tile)
 
         ;; random generate new enemy
         (when (and (thing-get new-tile 'walkable)
-                   (< (random 50) 1))
+                   (< (random 100) 1))
           (define new-thing
-            (make-thing
-             (vector-ref random-enemies
-                         (random (vector-length random-enemies)))
-             (location (pt x y))))
-          (set! npcs (cons new-thing npcs))))
+            ;; (make-thing
+            ;;  (vector-ref random-enemies
+            ;;             (random (vector-length random-enemies)))
+            (let ((base (vector-choose-random *enemies*)))
+              (make-thing base
+                          (location (pt x y)))))
+            
+          ;; store it in the npc list 
+          (set! npcs (cons new-thing npcs)))
+
+        (when (and (thing-get new-tile 'walkable)
+                   (< (random 500) 1))
+          (define new-item
+            (let ((base (vector-choose-biased (vector-choose-random *all-items*))))
+              (make-thing base)))
+          (thing-set! new-tile 'items (cons new-item (thing-get new-tile 'items)))))
+      
       (hash-ref tiles (list x y)))
 
     ;; try to move entity to a location
@@ -107,7 +129,33 @@
          (void))
       
         ((null? others)
-         (thing-set! entity 'location target))
+         (thing-set! entity 'location target)
+
+        (define (pick-up item)
+          (thing-set! entity 'inventory (cons item (thing-get entity 'inventory)))
+          (thing-set! tile 'items (remove item (thing-get tile 'items)))
+          (thing-call item 'on-pick-up item entity this))
+
+        (define (drop item)
+          (thing-set! entity 'inventory (remove item (thing-get entity 'invertory)))
+          (thing-set! tile 'items (cons item (thing-get tile 'items)))
+          (thing-call item 'on-drop item entity this))
+
+        (define (consume item)
+          (thing-set! tile 'items (remove item (thing-get tile 'items)))
+          (thing-call item 'on-pick-up item entity this))
+
+        (for ((item (in-list (thing-get tile 'items))))
+          (for ((in-inv (in-list (thing-get entity 'inventory)))
+                #:when (eq? (thing-get item 'category)
+                            (thing-get in-inv 'category)))
+            (drop in-inv))
+
+          (if (thing-get item 'consumable)
+              (consume item)
+              (pick-up item))))
+
+        ;; check this
         (else
          (for ((other (in-list others)))
            (define damage
@@ -119,7 +167,22 @@
                  (format "~a attacked ~a, did ~a damage"
                          (thing-get entity 'name)
                          (thing-get other 'name)
-                         damage))))))
+                         damage))))
+        ;; until here
+        ))
+
+    (define/public (attack entity other)
+      ;; damage
+      (define damage
+        (max 0 (- (random (max 1 (thing-get entity 'attack)))
+                  (random (max 1 (thing-get other 'defense))))))
+      (thing-set! other 'health (- (thing-get other 'health) damage))
+
+      (send this log
+            (format "~a attacked ~a, did ~a damage"
+                    (thing-get entity 'name)
+                    (thing-get other 'name)
+                    damage)))
     
     ;; store a list of non-player entities
     (define npcs '())
@@ -138,8 +201,8 @@
 
     ;; draw npcs on canvas
     (define/public (draw-npcs canvas)
-;     (if (empty? npcs) (send this log "npcs empty")
-;          (send this log "npcs not empty"))
+      ;     (if (empty? npcs) (send this log "npcs empty")
+      ;          (send this log "npcs not empty"))
       
       (for ((npc (in-list npcs)))
         (define x/y (recenter canvas (- (thing-get player 'location)
